@@ -1,0 +1,14 @@
+quiz-server/env
+
+### Django ###
+*.log
+*.pot
+*.pyc
+quiz-server/__pycache__/
+quiz-server/local_settings.py
+quiz-server/db.sqlite3
+quiz-server/db.sqlite3-journal
+quiz-server/media
+
+### vscode ###
+.vscode/
