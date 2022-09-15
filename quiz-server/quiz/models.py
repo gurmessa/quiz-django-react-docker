@@ -1,5 +1,6 @@
 from django.db import models
-from django.db.models import Q, UniqueConstraint
+from django.db.models import Q
+from django.contrib.auth import get_user_model
 
 class TimeStampedModel(models.Model):
     created = models.DateTimeField(auto_now_add=True)
@@ -36,3 +37,16 @@ class Answer(TimeStampedModel):
             models.UniqueConstraint(fields=['is_correct', 'question'], condition=Q(is_correct=True), name='unique_correct_answer')
         ]
         unique_together = ('text', 'question',)
+
+
+class TakenQuiz(TimeStampedModel):
+    text = models.CharField(max_length=255)
+    completed = models.BooleanField(default=False)
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE)
+    user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name="taken_quizzes")
+    current_score = models.IntegerField(default=0)
+    start = models.DateTimeField(auto_now_add=True)
+    end = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        unique_together = ('user', 'quiz',)
