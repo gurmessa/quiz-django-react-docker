@@ -1,5 +1,5 @@
+from datetime import datetime
 from django.test import TestCase
-from django.core.exceptions import ValidationError
 from django.db.utils import IntegrityError
 from quiz.models import *
 
@@ -138,3 +138,49 @@ class QuestionAndAnswerModelTest(TestCase):
                 question=question,
                 text="Answer one"
             )
+
+
+class TakenQuizModelTest(TestCase):
+    def setUp(self):
+        category = Category.objects.create(
+            title="Sport"
+        )
+        self.quiz = Quiz.objects.create(
+            title="Basketball",
+            category=category,
+            pass_mark=6,
+        )
+        self.user = get_user_model().objects.create_user(
+            username='testuser', password='password')
+    
+
+    def test_saving_takenquiz(self):
+        taken_quiz = TakenQuiz.objects.create(
+            user=self.user,
+            quiz=self.quiz 
+        )
+
+        saved_taken_quiz = TakenQuiz.objects.last()
+
+
+        self.assertEqual(saved_taken_quiz, taken_quiz)
+        self.assertEqual(saved_taken_quiz.current_score, 0)
+        self.assertNotEqual(saved_taken_quiz.start, None)
+        self.assertEqual(saved_taken_quiz.end, None)
+        self.assertEqual(saved_taken_quiz.quiz, self.quiz)
+        self.assertEqual(saved_taken_quiz.completed, False)
+        self.assertEqual(saved_taken_quiz.user, self.user)
+
+    
+    def test_cannot_take_quiz_twice(self):
+        TakenQuiz.objects.create(
+            user=self.user,
+            quiz=self.quiz
+        )
+        
+        with self.assertRaises(IntegrityError):
+            TakenQuiz.objects.create(
+                user=self.user,
+                quiz=self.quiz
+            )
+            
