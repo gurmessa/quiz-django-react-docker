@@ -34,8 +34,6 @@ class AuthenticationTest(APITestCase):
 
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
         self.assertEqual(user.email, email)
-        self.assertEqual(user.username, username)
-        print(response.data)
-        
+        self.assertEqual(user.username, username)  
 
       
