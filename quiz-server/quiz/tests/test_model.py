@@ -184,3 +184,68 @@ class TakenQuizModelTest(TestCase):
                 quiz=self.quiz
             )
             
+class AttemptedQuestionModelTest(TestCase):
+    def setUp(self):
+        category = Category.objects.create(
+            title="Sport"
+        )
+        self.quiz = Quiz.objects.create(
+            title="Basketball",
+            category=category,
+            pass_mark=6,
+        )
+        self.question = Question.objects.create(
+            text = "Questions one ..",
+            quiz=self.quiz
+        )
+
+        self.answer1 = Answer.objects.create(
+            question=self.question,
+            is_correct=True,
+            text="Answer One"
+        )
+
+        self.answer2 = Answer.objects.create(
+            question=self.question,
+            text="Answer two"
+        )
+
+        self.user = get_user_model().objects.create_user(
+            username='testuser', password='password')
+    
+        self.taken_quiz = TakenQuiz.objects.create(
+            user=self.user,
+            quiz=self.quiz 
+        )
+
+    def test_saving_attempted_question(self):
+        attempted_question = AttemptedQuestion.objects.create(
+            answer=self.answer1,
+            taken_quiz=self.taken_quiz,
+            question=self.question
+        )
+        saved_attempted_question = AttemptedQuestion.objects.last()
+
+        self.assertEqual(attempted_question, saved_attempted_question)
+
+    def test_creating_attempted_question_without_answer(self):
+        AttemptedQuestion.objects.create(
+            taken_quiz=self.taken_quiz,
+            question=self.question
+        )
+        total_attempted_questions = AttemptedQuestion.objects.count()
+        self.assertEqual(total_attempted_questions, 1)
+
+    def test_cannot_attempt_question_more_than_once(self):
+        AttemptedQuestion.objects.create(
+            answer=self.answer1,
+            taken_quiz=self.taken_quiz,
+            question=self.question
+        )
+
+        with self.assertRaises(IntegrityError):
+            AttemptedQuestion.objects.create(
+                answer=self.answer2,
+                taken_quiz=self.taken_quiz,
+                question=self.question
+            )
