@@ -50,3 +50,12 @@ class TakenQuiz(TimeStampedModel):
 
     class Meta:
         unique_together = ('user', 'quiz',)
+
+
+class AttemptedQuestion(TimeStampedModel):
+    taken_quiz = models.ForeignKey(TakenQuiz, on_delete=models.CASCADE, related_name="attempted_questions")
+    answer = models.ForeignKey(Answer, on_delete=models.CASCADE, null=True, blank=True)
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('taken_quiz', 'question',)
