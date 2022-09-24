@@ -14,12 +14,19 @@ class Category(TimeStampedModel):
     title = models.CharField(max_length=155)
 
 
+class QuizManager(models.Manager):
+    def published(self):
+        return self.filter(is_published=True)
+
+
 class Quiz(TimeStampedModel):
     title = models.CharField(max_length=155)
     description = models.TextField(null=True, blank=True)
     pass_mark = models.IntegerField()
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     is_published = models.BooleanField(default=False)
+
+    objects = QuizManager()
 
 
 class Question(TimeStampedModel):
