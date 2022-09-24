@@ -91,3 +91,34 @@ class QuizApiTest(APITestCase):
         response = self.client.get('/api/quizzes')
         self.assertEqual(status.HTTP_200_OK, response.status_code)
         self.assertEqual(1, len(response.data))
+
+
+class TakenQuizApiTest(APITestCase):
+    def setUp(self):
+        self.PASSWORD = "PassWord"
+        self.user = UserFactory(password=self.PASSWORD)
+        self.quiz1 = QuizFactory()
+    
+    def test_unauthenticated_user_cannot_register_to_test(self):
+        response = self.client.get(f'/api/quiz/{self.quiz1.id}/register')
+        self.assertEqual(status.HTTP_403_FORBIDDEN, response.status_code)
+
+    def test_authenticated_user_can_register_to_test(self):
+        self.client.login(username=self.user.username, password=self.PASSWORD)  
+        response = self.client.post(f'/api/quiz/{self.quiz1.id}/register')
+        
+        exp_taken_quiz = TakenQuiz.objects.last()
+
+        self.assertEqual(exp_taken_quiz.id, response.data['id'])
+        self.assertEqual(exp_taken_quiz.user, self.user)
+        self.assertEqual(exp_taken_quiz.quiz, self.quiz1)
+        self.assertEqual(TakenQuiz.objects.count(), 1)
+
+    def test_cannot_taken_quiz_again(self):
+        self.client.login(username=self.user.username, password=self.PASSWORD)  
+        self.client.post(f'/api/quiz/{self.quiz1.id}/register')
+
+        response = self.client.post(f'/api/quiz/{self.quiz1.id}/register')
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+
+    
