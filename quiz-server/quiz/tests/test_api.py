@@ -221,3 +221,239 @@ class QuizNextQuestionApiTest(APITestCase):
         response = self.client.get(f'/api/quiz/{self.taken_quiz.id}/next-question')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
        
+
+class TestAttemptQuestionAPIView(APITestCase):
+    def setUp(self):
+        self.PASSWORD = "PassWord"
+        self.user1 = UserFactory(password=self.PASSWORD)
+        self.user2 = UserFactory(password=self.PASSWORD)
+
+        self.quiz1 = QuizFactory()
+
+        self.question1 = QuestionFactory(quiz=self.quiz1)
+        self.question1_answer1 = AnswerFactory(is_correct=True, question=self.question1)
+        self.question1_answer2 = AnswerFactory(question=self.question1)
+        self.question1_answer3 = AnswerFactory(question=self.question1)
+
+        self.question2 = QuestionFactory(quiz=self.quiz1)
+        self.question2_answer1 = AnswerFactory(question=self.question2)
+        self.question2_answer2 = AnswerFactory(is_correct=True, question=self.question2)
+        self.question2_answer3 = AnswerFactory(question=self.question2)
+
+        self.taken_quiz = TakenQuiz.objects.create(
+            user=self.user1,
+            quiz=self.quiz1,
+            completed=False,
+        )
+
+        self.questions = [self.question1, self.question2]
+
+    def test_unauthorized_user_cannot_attempt_question(self):
+        attempted_question = AttemptedQuestion.objects.create(
+            question=self.question1,
+            taken_quiz=self.taken_quiz
+        )
+
+        response = self.client.post(f'/api/quiz/question/{attempted_question.pk}/attempt')
+        self.assertEqual(status.HTTP_403_FORBIDDEN, response.status_code)
+
+    def test_raises_validation_error_if_request_body_is_empty(self):
+        self.client.login(username=self.user1.username, password=self.PASSWORD)  
+       
+        response = self.client.get(f'/api/quiz/{self.taken_quiz.id}/next-question')
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+
+        attempted_question = AttemptedQuestion.objects.last()
+
+        response = self.client.post(
+            f'/api/quiz/question/{attempted_question.pk}/attempt',
+            {}
+        )
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+
+    def test_raises_validation_error_if_answer_id_is_invalid(self):
+        self.client.login(username=self.user1.username, password=self.PASSWORD)  
+       
+        response = self.client.get(f'/api/quiz/{self.taken_quiz.id}/next-question')
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+
+        attempted_question = AttemptedQuestion.objects.last()
+
+        response = self.client.post(
+            f'/api/quiz/question/{attempted_question.pk}/attempt',
+            {
+                "answer_id": self.question2_answer1.id
+            }
+        )
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+
+
+
+    def test_authorized_user_can_attempt_question(self):
+        self.client.login(username=self.user1.username, password=self.PASSWORD)  
+       
+        response = self.client.get(f'/api/quiz/{self.taken_quiz.id}/next-question')
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+
+        attempted_question = AttemptedQuestion.objects.last()
+
+        response = self.client.post(
+            f'/api/quiz/question/{attempted_question.pk}/attempt',
+            {
+                "answer_id": self.question1_answer2.id
+            }
+        )
+
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        
+        exp_attempted_question = AttemptedQuestion.objects.last()
+        self.assertEqual(exp_attempted_question.answer, self.question1_answer2)
+
+    def test_current_score_updates_if_answer_is_correct(self):
+        self.client.login(username=self.user1.username, password=self.PASSWORD)  
+       
+        response = self.client.get(f'/api/quiz/{self.taken_quiz.id}/next-question')
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+
+        attempted_question = AttemptedQuestion.objects.last()
+
+        response = self.client.post(
+            f'/api/quiz/question/{attempted_question.pk}/attempt',
+            {
+                "answer_id": self.question1_answer1.id
+            }
+        )
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+
+
+        taken_quiz = TakenQuiz.objects.last()
+        self.assertEqual(taken_quiz.current_score, 1)
+
+
+
+    def test_current_score_not_updates_if_answer_is_wrong(self):
+        self.client.login(username=self.user1.username, password=self.PASSWORD)  
+       
+        response = self.client.get(f'/api/quiz/{self.taken_quiz.id}/next-question')
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+
+        attempted_question = AttemptedQuestion.objects.last()
+
+
+        response = self.client.post(
+            f'/api/quiz/question/{attempted_question.pk}/attempt',
+            {
+                "answer_id": self.question1_answer2.id
+            }
+        )
+        
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        
+        taken_quiz = TakenQuiz.objects.last()
+        self.assertEqual(taken_quiz.current_score, 0)
+
+ 
+    def test_cannot_attempt_question_twice(self):
+        self.client.login(username=self.user1.username, password=self.PASSWORD)  
+       
+        response = self.client.get(f'/api/quiz/{self.taken_quiz.id}/next-question')
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+
+        attempted_question = AttemptedQuestion.objects.last()
+
+
+        response = self.client.post(
+            f'/api/quiz/question/{attempted_question.pk}/attempt',
+            {
+                "answer_id": self.question1_answer2.id
+            }
+        )
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        
+        response = self.client.post(
+            f'/api/quiz/question/{attempted_question.pk}/attempt',
+            {
+                "answer_id": self.question1_answer1.id
+            }
+        )
+
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+        
+
+    def test_complete_status_is_updated_when_quiz_has_no_next_question(self):
+        self.client.login(username=self.user1.username, password=self.PASSWORD)  
+       
+        response = self.client.get(f'/api/quiz/{self.taken_quiz.id}/next-question')
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+
+        attempted_question1 = AttemptedQuestion.objects.last()
+
+
+        response = self.client.post(
+            f'/api/quiz/question/{attempted_question1.pk}/attempt',
+            {
+                "answer_id": self.question1_answer2.id
+            }
+        )
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+
+        response = self.client.get(f'/api/quiz/{self.taken_quiz.id}/next-question')
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+
+        attempted_question2 = AttemptedQuestion.objects.last()
+
+        response = self.client.post(
+            f'/api/quiz/question/{attempted_question2.pk}/attempt',
+            {
+                "answer_id": self.question2_answer1.id
+            }
+        )
+
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.assertTrue(response.data['quiz_completed'])
+
+        taken_quiz = TakenQuiz.objects.last()
+        self.assertTrue(taken_quiz.completed)    
+
+    def test_user_cannot_attempt_other_users_question(self):
+        self.client.login(username=self.user1.username, password=self.PASSWORD)  
+       
+        response = self.client.get(f'/api/quiz/{self.taken_quiz.id}/next-question')
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+
+        self.client.logout()
+        attempted_question = AttemptedQuestion.objects.last()
+
+        # login with different user
+        self.client.login(username=self.user2.username, password=self.PASSWORD)  
+        response = self.client.post(
+            f'/api/quiz/question/{attempted_question.pk}/attempt',
+            {
+                "answer_id": self.question1_answer2.id
+            }
+        )
+        
+        self.assertEqual(status.HTTP_403_FORBIDDEN, response.status_code)
+ 
+    
+    def test_user_cannot_attempt_completed_quiz(self):
+        self.client.login(username=self.user1.username, password=self.PASSWORD)  
+       
+        response = self.client.get(f'/api/quiz/{self.taken_quiz.id}/next-question')
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+
+        taken_quiz = self.taken_quiz
+        taken_quiz.completed = True
+        taken_quiz.save()
+        attempted_question = AttemptedQuestion.objects.last()
+
+        response = self.client.post(
+            f'/api/quiz/question/{attempted_question.pk}/attempt',
+            {
+                "answer_id": self.question1_answer2.id
+            }
+        )
+        
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+ 
+    
