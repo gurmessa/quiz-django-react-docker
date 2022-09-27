@@ -31,7 +31,7 @@ class Quiz(TimeStampedModel):
 
 class Question(TimeStampedModel):
     text = models.CharField(unique=True, max_length=255)
-    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE)
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name="questions")
 
 
 class Answer(TimeStampedModel):
@@ -56,6 +56,17 @@ class TakenQuiz(TimeStampedModel):
 
     class Meta:
         unique_together = ('user', 'quiz',)
+
+    @property
+    def has_next_question(self):
+        return self.quiz.questions.exclude(
+            pk__in=self.attempted_questions.values_list('question__id', flat=True)
+        ).count() > 0
+
+    def get_next_question(self):
+        return self.quiz.questions.exclude(
+            pk__in=self.attempted_questions.values_list('question__id', flat=True)
+        ).first()
 
 
 class AttemptedQuestion(TimeStampedModel):
