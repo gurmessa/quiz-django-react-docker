@@ -6,8 +6,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.exceptions import PermissionDenied
 
-from quiz.models import Quiz, TakenQuiz, AttemptedQuestion
-from quiz.serializers import QuizSerializer, AttemptedQuestionSerializer
+from quiz.models import Quiz, TakenQuiz, AttemptedQuestion, Answer
+from quiz.serializers import QuizSerializer, AttemptedQuestionSerializer, AttemptQuestionSerializer
 from quiz.permissions import IsOwner
 
 class QuizListAPIView(generics.ListAPIView):
@@ -58,3 +58,53 @@ class NextQuestionAPIView(APIView):
                 {"message": "quiz has no next question"}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+
+class AttemptQuestionAPIView(APIView):
+    permission_classes = [IsOwner, ]
+
+    def post(self, request, *args, **kwargs):
+        attempted_question = get_object_or_404(AttemptedQuestion, pk=kwargs['pk'])
+        
+        self.check_object_permissions(request, attempted_question.taken_quiz)
+        
+        serializer = AttemptQuestionSerializer(data=request.data)
+
+        if serializer.is_valid():
+            answer_id = serializer.data['answer_id']
+            answer = get_object_or_404(Answer, pk=answer_id)
+
+            if answer.question != attempted_question.question:
+                return Response(
+                    {"message": "Invalid answer"}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            elif attempted_question.answer is not None:
+                return Response(
+                    {"message": "Question is already attempted"}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            taken_quiz = attempted_question.taken_quiz
+
+            if taken_quiz.completed:
+                return Response(
+                    {"message": "Quiz is already completed"}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            attempted_question.answer = answer
+            attempted_question.save()
+
+ 
+            if attempted_question.answer.is_correct:
+                taken_quiz.current_score +=1
+                taken_quiz.save()
+            
+            if not taken_quiz.has_next_question:
+                taken_quiz.completed = True
+                taken_quiz.save()
+            data = {
+                "quiz_completed": taken_quiz.completed
+            }
+            return Response(data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

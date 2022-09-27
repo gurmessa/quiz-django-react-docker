@@ -41,3 +41,6 @@ class AttemptedQuestionSerializer(serializers.ModelSerializer):
     def get_has_next_question(self, obj):
         return obj.taken_quiz.has_next_question
 
+
+class AttemptQuestionSerializer(serializers.Serializer):
+    answer_id = serializers.IntegerField()
