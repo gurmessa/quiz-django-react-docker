@@ -1,3 +1,4 @@
+from urllib import response
 from django.contrib.auth import get_user_model
 from rest_framework.test import APITestCase
 from rest_framework import status
@@ -456,4 +457,95 @@ class TestAttemptQuestionAPIView(APITestCase):
         
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
  
+    
+
+class TestQuizResultAPI(APITestCase):
+    def setUp(self):
+        self.PASSWORD = "PassWord"
+        self.user1 = UserFactory(password=self.PASSWORD)
+        self.user2 = UserFactory(password=self.PASSWORD)
+
+        self.quiz1 = QuizFactory(pass_mark=1)
+
+        self.question1 = QuestionFactory(quiz=self.quiz1)
+        self.question1_answer1 = AnswerFactory(is_correct=True, question=self.question1)
+        self.question1_answer2 = AnswerFactory(question=self.question1)
+        self.question1_answer3 = AnswerFactory(question=self.question1)
+
+        self.question2 = QuestionFactory(quiz=self.quiz1)
+        self.question2_answer1 = AnswerFactory(question=self.question2)
+        self.question2_answer2 = AnswerFactory(is_correct=True, question=self.question2)
+        self.question2_answer3 = AnswerFactory(question=self.question2)
+
+        self.taken_quiz = TakenQuiz.objects.create(
+            user=self.user1,
+            quiz=self.quiz1,
+            completed=False,
+        )
+
+    def test_raises_exception_if_quiz_not_completed(self):
+        self.client.login(username=self.user1.username, password=self.PASSWORD)  
+
+        response = self.client.get(f'/api/quiz/{self.taken_quiz.pk}/result')
+        self.assertEqual(status.HTTP_403_FORBIDDEN, response.status_code)
+
+    def test_user_can_retrieve_result(self):
+        self.client.login(username=self.user1.username, password=self.PASSWORD)  
+        taken_quiz = self.taken_quiz 
+        taken_quiz.completed = True
+        taken_quiz.save()
+
+        response = self.client.get(f'/api/quiz/{self.taken_quiz.pk}/result')
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.assertEqual(response.data['title'], taken_quiz.quiz.title)
+        self.assertEqual(response.data['description'], taken_quiz.quiz.description)
+        self.assertEqual(response.data['current_score'], 0)
+        self.assertFalse(response.data['has_passed'])
+
+    def test_user_score(self):
+        self.client.login(username=self.user1.username, password=self.PASSWORD)  
+
+        response = self.client.get(f'/api/quiz/{self.taken_quiz.id}/next-question')
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+
+        attempted_question1 = AttemptedQuestion.objects.last()
+
+
+        response = self.client.post(
+            f'/api/quiz/question/{attempted_question1.pk}/attempt',
+            {
+                "answer_id": self.question1_answer1.id
+            }
+        )
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+
+        response = self.client.get(f'/api/quiz/{self.taken_quiz.id}/next-question')
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+
+        attempted_question2 = AttemptedQuestion.objects.last()
+
+        response = self.client.post(
+            f'/api/quiz/question/{attempted_question2.pk}/attempt',
+            {
+                "answer_id": self.question2_answer2.id
+            }
+        )
+
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.assertTrue(response.data['quiz_completed'])
+
+
+        response = self.client.get(f'/api/quiz/{self.taken_quiz.pk}/result')
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.assertEqual(response.data['current_score'], 2)
+        self.assertTrue(response.data['has_passed'])
+
+
+
+    def test_user_cannot_access_other_users_result(self):
+        self.client.login(username=self.user2.username, password=self.PASSWORD)  
+
+        response = self.client.get(f'/api/quiz/{self.taken_quiz.pk}/result')
+        self.assertEqual(status.HTTP_403_FORBIDDEN, response.status_code)
+
     
