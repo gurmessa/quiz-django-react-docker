@@ -68,7 +68,12 @@ class TakenQuiz(TimeStampedModel):
             pk__in=self.attempted_questions.values_list('question__id', flat=True)
         ).first()
 
-
+    @property
+    def has_passed(self):
+        if self.completed:
+            return self.current_score >= self.quiz.pass_mark
+        return None
+        
 class AttemptedQuestion(TimeStampedModel):
     taken_quiz = models.ForeignKey(TakenQuiz, on_delete=models.CASCADE, related_name="attempted_questions")
     answer = models.ForeignKey(Answer, on_delete=models.CASCADE, null=True, blank=True)
