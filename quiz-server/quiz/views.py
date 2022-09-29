@@ -4,10 +4,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from quiz.models import Quiz, TakenQuiz, AttemptedQuestion, Answer
-from quiz.serializers import QuizSerializer, AttemptedQuestionSerializer, AttemptQuestionSerializer
+from quiz.serializers import QuizSerializer, AttemptedQuestionSerializer, \
+    AttemptQuestionSerializer, TakenQuizResultSerializer
 from quiz.permissions import IsOwner
 
 class QuizListAPIView(generics.ListAPIView):
@@ -108,3 +109,16 @@ class AttemptQuestionAPIView(APIView):
             }
             return Response(data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TakenQuizResultAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsOwner]
+    serializer_class = TakenQuizResultSerializer
+
+    def get_object(self):
+        taken_quiz = TakenQuiz.objects.get(pk=self.kwargs['pk'])
+
+        if not taken_quiz.completed:
+            raise PermissionDenied({"quiz not completed"})
+
+        return taken_quiz
