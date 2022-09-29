@@ -1,3 +1,4 @@
+from pyexpat import model
 from rest_framework import serializers
 from quiz.models import Quiz, TakenQuiz, Question, Answer, AttemptedQuestion
 
@@ -44,3 +45,12 @@ class AttemptedQuestionSerializer(serializers.ModelSerializer):
 
 class AttemptQuestionSerializer(serializers.Serializer):
     answer_id = serializers.IntegerField()
+
+
+class QuizResultSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(source="quiz.title")
+    description = serializers.CharField(source="quiz.description")
+
+    class Meta:
+        model = TakenQuiz
+        fields = ("title", "description", "current_score" ,"has_passed", "start", "end")
