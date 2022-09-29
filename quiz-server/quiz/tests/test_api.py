@@ -61,7 +61,8 @@ class QuizApiTest(APITestCase):
 
         TakenQuiz.objects.create(
             user=self.user,
-            quiz=quiz3
+            quiz=quiz3,
+            completed=True,
         )
 
         response = self.client.get('/api/quizzes')
@@ -76,12 +77,14 @@ class QuizApiTest(APITestCase):
         self.assertEqual(quiz1.title, exp_quiz1['title'])
         self.assertEqual(quiz1.description, exp_quiz1['description'])
         self.assertEqual(quiz1.category.title, exp_quiz1['category'])
+        self.assertEqual(None, exp_quiz1['has_passed'])
         self.assertFalse(exp_quiz1['taken'])
         
 
         exp_quiz3 = response.data[2]
         self.assertTrue(exp_quiz3['taken'])
-
+        self.assertEqual(False, exp_quiz3['has_passed'])
+        
 
     def test_unpublished_quizzes_arenot_listed(self):
         self.client.login(username=self.user.username, password=self.PASSWORD)  
@@ -92,6 +95,8 @@ class QuizApiTest(APITestCase):
         response = self.client.get('/api/quizzes')
         self.assertEqual(status.HTTP_200_OK, response.status_code)
         self.assertEqual(1, len(response.data))
+
+    
 
 
 class TakenQuizApiTest(APITestCase):

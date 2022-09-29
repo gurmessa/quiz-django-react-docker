@@ -5,10 +5,11 @@ from quiz.models import Quiz, TakenQuiz, Question, Answer, AttemptedQuestion
 class QuizSerializer(serializers.ModelSerializer):
     category = serializers.CharField(source="category.title")
     taken = serializers.SerializerMethodField()
+    has_passed = serializers.SerializerMethodField()
 
     class Meta:
         model = Quiz 
-        fields = ("id", "title", "description", "category", "taken")
+        fields = ("id", "title", "description", "category", "taken", "has_passed")
 
     def get_taken(self, obj):
         user = self.context.get('request').user
@@ -16,6 +17,19 @@ class QuizSerializer(serializers.ModelSerializer):
             user=user,
             quiz=obj
         ).exists()
+
+    def get_has_passed(self, obj):
+        user = self.context.get('request').user
+        if TakenQuiz.objects.filter(
+            user=user,
+            quiz=obj
+        ).exists():
+            return TakenQuiz.objects.get(
+                user=user,
+                quiz=obj
+            ).has_passed
+
+        return None
 
 
 class AttemptedQuestionSerializer(serializers.ModelSerializer):
@@ -47,7 +61,7 @@ class AttemptQuestionSerializer(serializers.Serializer):
     answer_id = serializers.IntegerField()
 
 
-class QuizResultSerializer(serializers.ModelSerializer):
+class TakenQuizResultSerializer(serializers.ModelSerializer):
     title = serializers.CharField(source="quiz.title")
     description = serializers.CharField(source="quiz.description")
 
