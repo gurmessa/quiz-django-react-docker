@@ -5,16 +5,22 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework import filters
+from django_filters.rest_framework import DjangoFilterBackend
 
 from quiz.models import Quiz, TakenQuiz, AttemptedQuestion, Answer
 from quiz.serializers import QuizSerializer, AttemptedQuestionSerializer, \
     AttemptQuestionSerializer, TakenQuizResultSerializer
 from quiz.permissions import IsOwner
+from quiz.filters import QuizFilter
+
 
 class QuizListAPIView(generics.ListAPIView):
     queryset = Quiz.objects.published()
     serializer_class = QuizSerializer
     permission_classes = [IsAuthenticated, ]
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = QuizFilter
 
 
 class TakenQuizAPIView(APIView):
