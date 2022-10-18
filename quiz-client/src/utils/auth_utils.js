@@ -3,7 +3,7 @@ function setLocalToken(token_value) {
 }
 
 function getLocalToken() {
-    localStorage.getItem("access_token", '');
+    return localStorage.getItem("access_token", null);
 }
 
 
