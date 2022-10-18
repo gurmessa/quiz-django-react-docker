@@ -17,6 +17,7 @@ export default function Input({
             className={
                 (error? "border-red-400 ":"") + "block text-sm py-3 px-4 rounded-lg w-full border outline-none"
             }
+            data-cy={`input-${name}`}
         />
         <span className="text-red-400 text-xs">{error}</span>
 

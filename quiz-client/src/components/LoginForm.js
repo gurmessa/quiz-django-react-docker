@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Login, Navigate } from 'react-router-dom';
 import { Formik, ErrorMessage } from 'formik';
 import Input from './Input';
 import SubmitButton from '../components/SubmitButton';
@@ -9,6 +10,7 @@ import { setLocalToken } from '../utils/auth_utils';
 
 export default function LoginForm(){
     const [error, setError] = useState(false)
+    const [success, setSuccess] = useState(false)
     
     const onSubmit = async(values, actions) => {
         setError(false)
@@ -18,9 +20,14 @@ export default function LoginForm(){
             const data = response;
             setError(true)
         }else{
-            setLocalToken(response.data['key'])
+            setLocalToken(response.data['key']);
+            setSuccess(true)
         }
 
+    }
+
+    if (success) {
+        return <Navigate to='/' />
     }
     
     return <>
