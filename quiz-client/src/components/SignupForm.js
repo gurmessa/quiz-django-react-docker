@@ -2,32 +2,38 @@ import { useState } from 'react';
 import { Login, Navigate } from 'react-router-dom';
 import { Formik, ErrorMessage } from 'formik';
 import Input from './Input';
-import SubmitButton from '../components/SubmitButton';
+import SubmitButton from './SubmitButton';
 import Warning from './Warning.js';
-import { yupLoginValidation } from '../schema/loginSchema';
-import { login} from '../services/AuthService';
-import { setLocalToken } from '../utils/auth_utils';
+import { yupSignupValidation } from '../schema/loginSchema';
+import { signup } from '../services/AuthService';
 
-export default function LoginForm(){
+
+export default function SignupForm(){
     const [error, setError] = useState(false)
     const [success, setSuccess] = useState(false)
     
     const onSubmit = async(values, actions) => {
         setError(false)
 
-        const { response, isError } = await login(values.username, values.password);
+        const { response, isError } = await signup(
+            values.username, values.email, 
+            values.password1, values.password2
+        );
         if (isError) {
-            const data = response;
+            const data = response.response.data;
+            for (const value in data) {
+                actions.setFieldError(value, data[value].join(' '));
+            }
+            
             setError(true)
         }else{
-            setLocalToken(response.data['key']);
             setSuccess(true)
         }
 
     }
 
     if (success) {
-        return <Navigate to='/' />
+        return <Navigate to='/login' />
     }
     
     return <>
@@ -44,7 +50,7 @@ export default function LoginForm(){
                 password: ''
             }}
             onSubmit={onSubmit}
-            validationSchema={yupLoginValidation}
+            validationSchema={yupSignupValidation}
             validateOnChange={false}
             validateOnBlur={false}
         >
@@ -66,18 +72,35 @@ export default function LoginForm(){
                                 onChange={handleChange}
                             />
                             <Input 
-                                name="password"
-                                placeholder="Password"
-                                value={values.password}
-                                error={errors.password}
+                                name="email"
+                                placeholder="Email"
+                                value={values.email}
+                                error={errors.email}
                                 onChange={handleChange}
+                                type="email"
+                            />
+                            <Input 
+                                name="password1"
+                                placeholder="Password"
+                                value={values.password1}
+                                error={errors.password1}
+                                onChange={handleChange}
+                                type="password"
+                            />
+                            <Input 
+                                name="password2"
+                                placeholder="Confirm Password"
+                                value={values.password2}
+                                error={errors.password2}
+                                onChange={handleChange}
+                                type="password"
                             />
                         </div>
                         <div class="text-center mt-6">
                             <SubmitButton 
-                                text="Login"
+                                text="Create Account"
                             />
-                            <p class="mt-4 text-sm pt-0">Don't have an account? <span class="underline cursor-pointer">Sign Up</span>
+                            <p class="mt-4 text-sm">Already Have An Account? <span class="underline cursor-pointer"> Sign In</span>
                             </p>
                         </div>
                     </form>
