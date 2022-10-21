@@ -4,7 +4,7 @@ import { Formik, ErrorMessage } from 'formik';
 import Input from './Input';
 import SubmitButton from './SubmitButton';
 import Warning from './Warning.js';
-import { yupSignupValidation } from '../schema/loginSchema';
+import { yupSignupValidation } from '../schema/signupSchema';
 import { signup } from '../services/AuthService';
 
 
