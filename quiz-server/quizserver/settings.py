@@ -41,16 +41,18 @@ INSTALLED_APPS = [
 
     'rest_framework',
     'rest_framework.authtoken',
-
+    'corsheaders',
     'dj_rest_auth',
     'allauth',
     'allauth.account',
     'dj_rest_auth.registration',
     'django_filters',
+
     'quiz',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -145,3 +147,5 @@ CORS_ORIGIN_WHITELIST = [
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
 ]
+
+CORS_ALLOW_CREDENTIALS = True
