@@ -40,6 +40,26 @@ class AuthenticationTest(APITestCase):
         self.assertEqual(user.username, username)  
 
 
+class CategoryApiTest(APITestCase):
+    def setUp(self):
+        self.category1 = CategoryFactory()
+        self.category2 = CategoryFactory()
+    
+    def test_can_list_categories(self):
+        response = self.client.get('/api/categories')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)        
+        self.assertEqual(len(response.data), 2)
+
+        exp_category1 = response.data[0]
+        self.assertEqual(self.category1.title, exp_category1['title'])
+        self.assertEqual(self.category1.id, exp_category1['id'])
+
+        exp_category2 = response.data[1]
+        self.assertEqual(self.category2.title, exp_category2['title'])
+        self.assertEqual(self.category2.id, exp_category2['id'])
+
+
 class QuizApiTest(APITestCase):
     def setUp(self):
         self.PASSWORD = "PassWord"
