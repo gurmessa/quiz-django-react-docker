@@ -135,6 +135,24 @@ class QuizApiTest(APITestCase):
         self.assertEqual(status.HTTP_200_OK, response.status_code)
         self.assertEqual(1, len(response.data))
 
+    def test_searching_by_category(self):
+        self.client.login(username=self.user.username, password=self.PASSWORD)  
+
+        category1 = CategoryFactory(title="Sport")
+        category2 = CategoryFactory(title="programming")
+
+        QuizFactory(title="Football", category=category1)
+        QuizFactory(title="C++", category=category2)
+        QuizFactory(title="C#", category=category2)
+
+        response = self.client.get(f'/api/quizzes?category={category1.pk}')
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.assertEqual(1, len(response.data))
+
+        response = self.client.get(f'/api/quizzes?category={category2.pk}')
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.assertEqual(2, len(response.data))
+
 
 class TakenQuizApiTest(APITestCase):
     def setUp(self):
