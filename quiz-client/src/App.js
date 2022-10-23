@@ -10,13 +10,11 @@ function App() {
   const [isLoggedIn, setLoggedIn] = useState(Boolean(getLocalToken()));
 
   return (
-    <div>
       <Routes>
-        <Route path='/' element={<Home/>} />
+        <Route path='/' element={isLoggedIn? <Home/> : <Navigate to='/login' /> } />
         <Route path='/login' element={isLoggedIn ? <Navigate to='/' /> : <Login/>} />
         <Route path='/signup' element={isLoggedIn ? <Navigate to='/' /> : <Signup/>} />
       </Routes>
-    </div>
   );
 }
 
