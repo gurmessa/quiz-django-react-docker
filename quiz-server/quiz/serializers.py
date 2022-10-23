@@ -1,5 +1,11 @@
 from rest_framework import serializers
-from quiz.models import Quiz, TakenQuiz, Question, Answer, AttemptedQuestion
+from quiz.models import Quiz, TakenQuiz, Question, Answer, AttemptedQuestion, Category
+
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ("id", "title",)
+
 
 class QuizSerializer(serializers.ModelSerializer):
     category = serializers.CharField(source="category.title")
