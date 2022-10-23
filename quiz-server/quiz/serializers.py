@@ -1,4 +1,3 @@
-from pyexpat import model
 from rest_framework import serializers
 from quiz.models import Quiz, TakenQuiz, Question, Answer, AttemptedQuestion
 
