@@ -8,11 +8,16 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework import filters
 from django_filters.rest_framework import DjangoFilterBackend
 
-from quiz.models import Quiz, TakenQuiz, AttemptedQuestion, Answer
+from quiz.models import Quiz, TakenQuiz, AttemptedQuestion, Answer, Category
 from quiz.serializers import QuizSerializer, AttemptedQuestionSerializer, \
-    AttemptQuestionSerializer, TakenQuizResultSerializer
+    AttemptQuestionSerializer, TakenQuizResultSerializer, CategorySerializer
 from quiz.permissions import IsOwner
 from quiz.filters import QuizFilter
+
+
+class CategoryListAPIView(generics.ListAPIView):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
 
 
 class QuizListAPIView(generics.ListAPIView):
