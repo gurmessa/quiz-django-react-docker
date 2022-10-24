@@ -1,16 +1,18 @@
-import { useState } from 'react';
+import { useState, useContext } from 'react';
 import { Login, Navigate } from 'react-router-dom';
 import { Formik, ErrorMessage } from 'formik';
 import Input from './Input';
 import SubmitButton from '../components/SubmitButton';
 import Warning from './Warning.js';
 import { yupLoginValidation } from '../schema/loginSchema';
-import { login} from '../services/AuthService';
+import { login } from '../services/AuthService';
 import { setLocalToken } from '../utils/auth_utils';
+import { AuthContext } from '../context/AuthContext';
 
 export default function LoginForm(){
     const [error, setError] = useState(false)
     const [success, setSuccess] = useState(false)
+    const { authLogin } = useContext(AuthContext)
     
     const onSubmit = async(values, actions) => {
         setError(false)
@@ -20,7 +22,8 @@ export default function LoginForm(){
             const data = response;
             setError(true)
         }else{
-            setLocalToken(response.data['key']);
+            authLogin(response.data['key']);
+            //setLocalToken(response.data['key']);
             setSuccess(true)
         }
 

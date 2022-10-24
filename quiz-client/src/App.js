@@ -1,20 +1,44 @@
-import { useState } from 'react';
+import { useState, useContext } from 'react';
 import { Route, Routes, Navigate } from 'react-router-dom';
+import AuthProvider from './context/AuthContext';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Home from './pages/Home';
-import { getLocalToken } from './utils/auth_utils';
+import ProtectedRoute from './routes/ProtectedRoute';
+import AuthRoute from './routes/AuthRoute';
 
 function App() {
 
-  const [isLoggedIn, setLoggedIn] = useState(Boolean(getLocalToken()));
-
   return (
+    <AuthProvider>
       <Routes>
-        <Route path='/' element={isLoggedIn? <Home/> : <Navigate to='/login' /> } />
-        <Route path='/login' element={isLoggedIn ? <Navigate to='/' /> : <Login/>} />
-        <Route path='/signup' element={isLoggedIn ? <Navigate to='/' /> : <Signup/>} />
-      </Routes>
+        <Route 
+          path='/' 
+          element={
+            <ProtectedRoute>
+              <Home/>
+            </ProtectedRoute>
+          }
+        >
+        </Route>
+        <Route 
+          path='/login' 
+          element={
+            <AuthRoute>
+              <Login/>
+            </AuthRoute>
+          } 
+        />
+        <Route 
+          path='/signup' 
+          element={
+            <AuthRoute>
+              <Signup/>
+            </AuthRoute>
+          }
+        />
+      </Routes> 
+      </AuthProvider>
   );
 }
 
