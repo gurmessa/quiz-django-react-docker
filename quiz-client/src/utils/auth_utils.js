@@ -6,5 +6,12 @@ function getLocalToken() {
     return localStorage.getItem("access_token", null);
 }
 
+function isAuthenticated() {
+    return localStorage.getItem("access_token", null) != null;
+}
 
-export {setLocalToken, getLocalToken}
+function removeLocalToken() {
+    localStorage.removeItem("access_token");
+}
+
+export {setLocalToken, getLocalToken, isAuthenticated, removeLocalToken}
